@@ -18,40 +18,47 @@ class _HomePageState extends State<HomePage> {
         title: Text("Gerenciamento/Gerência de estado",
           style: TextStyle(color: Colors.white,)
         ),
-        leading: Center(
-          child: Text(controller.todos.where((todo) => todo.checked).length.toString(),
-            style: TextStyle(color: Colors.white,)
-          ),
+        leading: StreamBuilder<int>(
+          initialData: 0,
+          stream: controller.getOutInt,
+          builder: (_, snapshot){
+            return Center(
+              child: Text(snapshot.data.toString(),
+                style: TextStyle(color: Colors.white,)
+              ),
+            );
+          }
         ),
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add,color: Colors.white, size: 20,),
         onPressed: () async {
           await _showEditDialog(context, controller);  
-          setState(() {});
         }
       ),
-      body: ListView.builder(
-        itemCount: controller.todos.length,
-        itemBuilder: (_, index){
-          return ListTile(
-            title: Text(controller.todos[index].todo),
-            leading: IconButton(
-              icon: Icon(Icons.remove_circle, color: Colors.red),
-              onPressed: (){
-                setState(() {
-                  controller.todos.remove(controller.todos[index]);
-                });
-              }
-            ),
-            trailing: Checkbox(
-              value: controller.todos[index].checked, 
-              onChanged: (v){
-                setState(() {
-                  controller.todos[index].checked = v;
-                });
-              }
-            ),
+      body: StreamBuilder<List<TodoModel>>(
+        initialData: controller.todos,
+        stream: controller.output,
+        builder: (index, snapshot){
+          return ListView.builder(
+            itemCount: snapshot.data.length,
+            itemBuilder: (_, index){
+              return ListTile(
+                title: Text(snapshot.data[index].todo),
+                leading: IconButton(
+                  icon: Icon(Icons.remove_circle, color: Colors.red),
+                  onPressed: (){
+                    controller.removeModel(snapshot.data[index]);
+                  }
+                ),
+                trailing: Checkbox(
+                  value: controller.todos[index].checked, 
+                  onChanged: (v){
+                    controller.setCheck(snapshot.data[index], index);
+                  }
+                ),
+              );
+            }
           );
         }
       ),
@@ -78,7 +85,7 @@ Future<void> _showEditDialog(BuildContext context, TodoController controller){
         FlatButton(
           child: Text("Add"),
           onPressed: (){
-            controller.todos.add(TodoModel(todo: textController.text));
+            controller.addModel(TodoModel(todo: textController.text));
             Navigator.pop(context);
           },
         ),
